@@ -1,0 +1,2283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>机器号</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .container {
+            display: flex;
+            min-height: 500px;
+            height: auto;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            overflow: hidden; /* 确保边框包含所有内容 */
+            box-sizing: border-box;
+        }
+        
+        .column {
+            flex: 1;
+            border-right: 1px solid #ccc;
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+        
+        .column:last-child {
+            border-right: none;
+        }
+        
+        .row-number-column {
+            width: 120px;
+            min-width: 80px;
+            max-width: 200px;
+            flex: none;
+            border-right: 1px solid #ccc;
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            position: relative;
+            resize: horizontal;
+            overflow: hidden;
+        }
+
+        .variety-column {
+            width: 150px;
+            min-width: 100px;
+            max-width: 250px;
+            flex: none;
+            border-right: 1px solid #ccc;
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            position: relative;
+            resize: horizontal;
+            overflow: hidden;
+        }
+
+        .column-resize-handle {
+            position: absolute;
+            right: -2px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            cursor: col-resize;
+            z-index: 1;
+            background-color: transparent;
+        }
+
+        .column-resize-handle:hover {
+            background-color: #2196F3;
+        }
+        
+        .column-header {
+            margin: 0;
+            height: 40px; /* 固定标题高度 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f0f0;
+            border-bottom: 1px solid #ccc;
+            font-weight: bold;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        
+        .column-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            background-color: #f8f8f8;
+            border-bottom: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+        
+        .column-input {
+            width: 80px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 5px;
+            box-sizing: border-box;
+        }
+        
+        .column-button {
+            padding: 8px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .column-button:hover {
+            background-color: #0b7dda;
+        }
+        
+        .column-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* 添加滚动条 */
+            max-height: calc(100vh - 250px); /* 限制高度，确保可以滚动 */
+            box-sizing: border-box;
+        }
+        
+        .add-row-button {
+            margin: 0 auto;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 20px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+        
+        .add-row-button:hover {
+            background-color: #45a049;
+        }
+        
+        .row-number {
+            display: flex;
+            align-items: center; /* 垂直居中 */
+            justify-content: center; /* 水平居中 */
+            margin: 0;
+            padding: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            flex-shrink: 0; /* 防止压缩 */
+            height: 72px; /* 固定高度与cell一致 */
+            box-sizing: border-box;
+            position: relative; /* 为删除按钮定位 */
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .row-number:hover::after {
+            content: "×";
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: #ff4444;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .row-number.editing {
+            background-color: #d0d0d0;
+        }
+        
+        .number-tag {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 12px;
+            margin: 3px;
+            border-radius: 5px;
+            cursor: move;
+            user-select: none;
+            position: relative;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .number-tag:hover::after {
+            content: "×";
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: #ff4444;
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .number-tag.editing {
+            cursor: text;
+            outline: 2px solid #2196F3;
+        }
+        
+        .cell {
+            border-bottom: 1px solid #ddd;
+            margin: 0;
+            padding: 10px;
+            background-color: #ffffff;
+            height: 72px; /* 固定高度以确保对齐 */
+            flex-shrink: 0; /* 防止压缩 */
+            cursor: pointer; /* 添加指针样式，表明可点击 */
+            box-sizing: border-box;
+            overflow-y: auto; /* 允许内容溢出时滚动 */
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+        }
+        
+        .sum-display {
+            font-weight: bold;
+            margin-top: 5px;
+            color: #333;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+        }
+        
+        button {
+            padding: 10px 15px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+        
+        button:hover {
+            background-color: #0b7dda;
+        }
+        
+        .number-tag.used {
+            opacity: 0.6;
+            cursor: default;
+            background-color: #999;
+        }
+        
+        .editable-title {
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .editable-title:hover::after {
+            content: "✎";
+            position: absolute;
+            font-size: 14px;
+            margin-left: 8px;
+            color: #2196F3;
+        }
+        
+        .editable-title.editing {
+            border: 2px solid #2196F3;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        /* 新增品种列编辑样式 */
+        .editable-cell {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 8px;
+            min-height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .editable-cell:hover {
+            background-color: #f5f5f5;
+        }
+        .editable-cell::before {
+            content: '点击编辑';
+            position: absolute;
+            color: #999;
+            font-size: 12px;
+            opacity: 0.6;
+        }
+        .editable-cell.editing {
+            background-color: #fff;
+            z-index: 100;
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+        }
+        .editable-cell.editing::before {
+            display: none;
+        }
+        
+        /* 固定控制面板样式 */
+        .fixed-controls {
+            position: sticky;
+            top: 0;
+            background-color: #f8f8f8;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            height: 58px; /* 固定高度确保对齐 */
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            box-sizing: border-box;
+        }
+        
+        /* 自定义输入框样式 */
+        .custom-input-popup {
+            position: absolute;
+            background-color: white;
+            border: 2px solid #2196F3;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+        
+        .custom-input-popup input {
+            width: 100px;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        .custom-input-popup .buttons {
+            display: flex;
+            justify-content: space-between;
+            box-sizing: border-box;
+        }
+        
+        .custom-input-popup button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        .custom-input-popup .confirm-btn {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .custom-input-popup .cancel-btn {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        /* 添加行组样式 */
+        .row-group {
+            display: flex;
+            width: 100%;
+            margin: 0;
+            box-sizing: border-box;
+        }
+        
+        /* 交替行背景色 */
+        .row-group:nth-child(odd) .cell,
+        .row-group:nth-child(odd) .row-number {
+            background-color: #ffffff;
+        }
+        
+        .row-group:nth-child(even) .cell,
+        .row-group:nth-child(even) .row-number {
+            background-color: #f9f9f9;
+        }
+        
+        /* 鼠标悬停高亮整行 */
+        .row-group:hover .cell,
+        .row-group:hover .row-number {
+            background-color: #e3f2fd;
+        }
+        
+        /* 导出按钮样式 */
+        .export-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            box-sizing: border-box;
+            margin-right: 10px; /* 添加右边距，使按钮之间有间隔 */
+        }
+        
+        .export-btn:hover {
+            background-color: #45a049;
+        }
+        
+        .export-btn i {
+            margin-right: 5px;
+        }
+        
+        /* 导出图片按钮样式 */
+        .export-img-btn {
+            background-color: #2196F3;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            box-sizing: border-box;
+        }
+        
+        .export-img-btn:hover {
+            background-color: #0b7dda;
+        }
+        
+        .export-img-btn i {
+            margin-right: 5px;
+        }
+        
+        /* 按钮容器样式 */
+        .buttons-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        /* 加载中动画样式 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .loading-spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite;
+        }
+        
+        .loading-text {
+            color: white;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 表格标题样式 */
+        .table-title {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #333;
+            text-align: center;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .table-title:hover::after {
+            content: "✎";
+            position: absolute;
+            font-size: 18px;
+            margin-left: 8px;
+            color: #2196F3;
+        }
+        
+        .table-title.editing {
+            border: 2px solid #2196F3;
+            padding: 5px;
+            border-radius: 4px;
+        }
+        
+        /* 表格说明样式 */
+        .table-description {
+            color: #666;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        /* 确保所有元素使用相同的盒模型计算 */
+        * {
+            box-sizing: border-box;
+        }
+    </style>
+    <!-- 添加html2canvas库 -->
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+</head>
+<body>
+    <h1 class="table-title editable-title" id="main-title">机器号</h1>
+    
+    <div class="controls">
+        <div class="table-description">
+            <p>在人员列中添加数字标签，然后拖拽到合计列进行求和</p>
+        </div>
+        <div class="buttons-container">
+            <button class="export-btn" id="export-excel">
+                <i>📊</i> 导出到Excel
+            </button>
+            <button class="export-img-btn" id="export-image">
+                <i>📷</i> 保存为图片
+            </button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="row-number-column" id="row-numbers">
+            <h2 class="column-header">日期</h2>
+            <div class="fixed-controls">
+                <button class="add-row-button" id="add-row" title="添加新行">+</button>
+            </div>
+            <div class="column-content" id="row-numbers-content">
+                <!-- 日期内容将在这里动态添加 -->
+            </div>
+        </div>
+        
+        <!-- 在日期列右侧新增品种列 -->
+        <div class="column" id="variety-column">
+            <h2 class="column-header">品种</h2>
+            <div class="fixed-controls">
+                <div style="height: 38px;"></div>
+            </div>
+            <div class="column-content" id="variety-content"></div>
+        </div>
+
+        <div class="column" id="column1">
+            <h2 class="editable-title column-header" id="title1">人员一</h2>
+            <div class="fixed-controls">
+                <div class="control-group">
+                    <input type="text" id="column1-input" placeholder="数值" class="column-input">
+                    <button id="add-to-column1" class="column-button">添加</button>
+                </div>
+            </div>
+            <div class="column-content" id="column1-content"></div>
+        </div>
+        
+        <div class="column" id="column2">
+            <h2 class="editable-title column-header" id="title2">人员二</h2>
+            <div class="fixed-controls">
+                <div class="control-group">
+                    <input type="text" id="column2-input" placeholder="数值" class="column-input">
+                    <button id="add-to-column2" class="column-button">添加</button>
+                </div>
+            </div>
+            <div class="column-content" id="column2-content"></div>
+        </div>
+        
+        <div class="column" id="column3">
+            <h2 class="column-header">合计</h2>
+            <div class="fixed-controls">
+                <!-- 空的控制区域，用于保持对齐 -->
+                <div style="height: 38px;"></div>
+            </div>
+            <div class="column-content" id="column3-content"></div>
+        </div>
+    </div>
+    
+    <script>
+        // 添加页面关闭或刷新前的确认提示
+        window.addEventListener('beforeunload', function(e) {
+            // 检查是否有数据需要保存
+            const hasData = checkForData();
+            
+            if (hasData) {
+                // 标准的确认消息
+                const confirmationMessage = '您有未保存的数据，确定要离开吗？';
+                
+                // 不同浏览器处理方式不同，需要同时设置returnValue和返回值
+                e.returnValue = confirmationMessage;
+                return confirmationMessage;
+            }
+        });
+        
+        // 检查是否有数据需要保存
+        function checkForData() {
+            // 检查是否有任何数字标签
+            const tags = document.querySelectorAll('.number-tag');
+            if (tags.length > 0) {
+                return true;
+            }
+            
+            // 检查是否修改了标题
+            const mainTitle = document.getElementById('main-title');
+            if (mainTitle && mainTitle.textContent !== '机器号') {
+                return true;
+            }
+            
+            // 检查是否修改了列标题
+            const title1 = document.getElementById('title1');
+            const title2 = document.getElementById('title2');
+            if ((title1 && title1.textContent !== '人员一') || 
+                (title2 && title2.textContent !== '人员二')) {
+                return true;
+            }
+            
+            // 检查是否有多于一行的数据
+            const rows = document.querySelectorAll('.row-group');
+            if (rows.length > 1) {
+                return true;
+            }
+            
+            return false;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化拖拽功能
+            initDragAndDrop();
+            
+            // 添加新行按钮
+            document.getElementById('add-row').addEventListener('click', function() {
+                addNewRow();
+            });
+            
+            // 添加到第一列按钮
+            document.getElementById('add-to-column1').addEventListener('click', function() {
+                addCustomTag('column1-input', 'column1');
+            });
+            
+            // 添加到第二列按钮
+            document.getElementById('add-to-column2').addEventListener('click', function() {
+                addCustomTag('column2-input', 'column2');
+            });
+            
+            // 添加标题编辑功能
+            initTitleEditing();
+            
+            // 添加初始行
+            addNewRow();
+            
+            // 添加滚动同步功能
+            initScrollSync();
+            
+            // 添加导出到Excel功能
+            document.getElementById('export-excel').addEventListener('click', exportToExcel);
+            
+            // 添加导出为图片功能
+            document.getElementById('export-image').addEventListener('click', exportToImage);
+            
+            // 添加主标题编辑功能
+            const mainTitle = document.getElementById('main-title');
+            if (mainTitle) {
+                mainTitle.addEventListener('click', function() {
+                    // 如果已经在编辑中，不做任何操作
+                    if (mainTitle.classList.contains('editing')) {
+                        return;
+                    }
+                    
+                    // 保存原始文本
+                    const originalText = mainTitle.textContent;
+                    mainTitle.classList.add('editing');
+                    
+                    // 创建输入框
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = originalText;
+                    input.style.width = '300px';
+                    input.style.fontSize = '24px';
+                    input.style.fontWeight = 'bold';
+                    input.style.padding = '5px';
+                    input.style.border = 'none';
+                    input.style.outline = 'none';
+                    input.style.backgroundColor = 'transparent';
+                    input.style.textAlign = 'center';
+                    
+                    // 清空标题内容并添加输入框
+                    mainTitle.textContent = '';
+                    mainTitle.appendChild(input);
+                    input.focus();
+                    
+                    // 处理输入框失去焦点事件
+                    input.addEventListener('blur', finishEditing);
+                    
+                    // 处理回车键
+                    input.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            finishEditing();
+                        }
+                    });
+                    
+                    // 完成编辑的函数
+                    function finishEditing() {
+                        const newText = input.value.trim();
+                        mainTitle.classList.remove('editing');
+                        
+                        // 如果输入为空，恢复原始文本
+                        if (newText === '') {
+                            mainTitle.textContent = originalText;
+                        } else {
+                            mainTitle.textContent = newText;
+                            // 更新页面标题
+                            document.title = newText;
+                        }
+                    }
+                });
+            }
+        });
+        
+        // 添加全局变量来跟踪当前拖动的源标签
+        window.currentDragSourceId = null;
+        
+        function initDragAndDrop() {
+            const numberTags = document.querySelectorAll('.number-tag');
+            const cells = document.querySelectorAll('.cell');
+            
+            // 为数字标签添加拖拽事件
+            numberTags.forEach(tag => {
+                tag.addEventListener('dragstart', function(e) {
+                    e.dataTransfer.setData('text/plain', tag.dataset.value);
+                    e.dataTransfer.setData('sourceId', tag.id);
+                    // 存储当前拖动的标签ID到全局变量
+                    window.currentDragSourceId = tag.id;
+                });
+                
+                tag.addEventListener('dragend', function() {
+                    // 清除全局变量
+                    window.currentDragSourceId = null;
+                });
+            });
+            
+            // 为单元格添加放置事件
+            cells.forEach(cell => {
+                // 添加点击事件用于直接创建标签（仅第一列和第二列）
+                if (cell.id && (cell.id.startsWith('cell1-') || cell.id.startsWith('cell2-'))) {
+                    cell.addEventListener('click', function(e) {
+                        // 如果点击的是单元格而不是其中的标签
+                        if (e.target === cell) {
+                            const columnNumber = cell.id.startsWith('cell1-') ? 1 : 2;
+                            promptAndAddTag(cell, columnNumber);
+                        }
+                    });
+                }
+                
+                cell.addEventListener('dragover', function(e) {
+                    // 获取被拖动的标签来源信息
+                    const sourceId = e.dataTransfer.getData('sourceId');
+                    let sourceTag = null;
+                    let sourceColumn = null;
+                    
+                    // 在dragover事件中无法直接获取dataTransfer数据，所以使用全局变量
+                    if (window.currentDragSourceId) {
+                        sourceTag = document.getElementById(window.currentDragSourceId);
+                        if (sourceTag) {
+                            // 确定源标签所在的列
+                            const parentCell = sourceTag.closest('.cell');
+                            if (parentCell) {
+                                if (parentCell.id.startsWith('cell1-')) {
+                                    sourceColumn = 1;
+                                } else if (parentCell.id.startsWith('cell2-')) {
+                                    sourceColumn = 2;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 确定目标单元格所在的列
+                    let targetColumn = null;
+                    if (cell.id.startsWith('cell1-')) {
+                        targetColumn = 1;
+                    } else if (cell.id.startsWith('cell2-')) {
+                        targetColumn = 2;
+                    } else if (cell.id.startsWith('cell3-')) {
+                        targetColumn = 3;
+                    }
+                    
+                    // 允许以下情况放置：
+                    // 1. 第一列拖到第三列
+                    // 2. 第二列拖到第三列
+                    // 3. 同一列内的不同行之间移动
+                    const allowDrop = 
+                        (sourceColumn === 1 && targetColumn === 3) || 
+                        (sourceColumn === 2 && targetColumn === 3) ||
+                        (sourceColumn === targetColumn); // 允许同列不同行
+                    
+                    if (allowDrop) {
+                    e.preventDefault(); // 允许放置
+                        // 添加视觉反馈
+                        cell.style.backgroundColor = '#e3f2fd';
+                    }
+                });
+                
+                // 添加dragenter事件处理
+                cell.addEventListener('dragenter', function(e) {
+                    const sourceTag = document.getElementById(window.currentDragSourceId);
+                    if (sourceTag) {
+                        const sourceCell = sourceTag.closest('.cell');
+                        const sourceColumn = sourceCell.id.startsWith('cell1-') ? 1 : 
+                                          sourceCell.id.startsWith('cell2-') ? 2 : 3;
+                        
+                        const targetColumn = cell.id.startsWith('cell1-') ? 1 : 
+                                          cell.id.startsWith('cell2-') ? 2 : 3;
+                                          
+                        if (sourceColumn === targetColumn || 
+                            (sourceColumn !== 3 && targetColumn === 3)) {
+                            cell.style.backgroundColor = '#e3f2fd';
+                        }
+                    }
+                });
+                
+                // 添加dragleave事件处理
+                cell.addEventListener('dragleave', function(e) {
+                    cell.style.backgroundColor = '#f9f9f9';
+                });
+                
+                cell.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    // 恢复单元格背景色
+                    cell.style.backgroundColor = '#f9f9f9';
+                    
+                    const value = e.dataTransfer.getData('text/plain');
+                    const sourceId = e.dataTransfer.getData('sourceId');
+                    const sourceTag = document.getElementById(sourceId);
+                    
+                    // 如果是同一列内的移动，直接移动原标签
+                    if (sourceTag && 
+                        ((cell.id.startsWith('cell1-') && sourceTag.closest('.cell').id.startsWith('cell1-')) ||
+                         (cell.id.startsWith('cell2-') && sourceTag.closest('.cell').id.startsWith('cell2-')))) {
+                        cell.appendChild(sourceTag);
+                        return;
+                    }
+                    
+                    // 创建新标签
+                    const newTag = document.createElement('div');
+                    newTag.className = 'number-tag';
+                    newTag.textContent = value;
+                    newTag.dataset.value = value;
+                    
+                    // 如果是拖到第三列，禁用源标签的拖动
+                    if(cell.id.startsWith('cell3') && sourceId) {
+                        // 找到源标签并禁用拖动
+                        const sourceTag = document.getElementById(sourceId);
+                        if(sourceTag) {
+                            sourceTag.draggable = false;
+                            sourceTag.classList.add('used');
+                            sourceTag.style.opacity = '0.6';
+                            sourceTag.style.cursor = 'default';
+                            sourceTag.title = '已使用，删除第三列中的标签后可再次使用';
+                            
+                            // 存储关联信息
+                            const uniqueId = Date.now() + Math.random().toString(36).substr(2, 5);
+                            sourceTag.dataset.linkedId = uniqueId;
+                            newTag.dataset.linkedId = uniqueId;
+                            newTag.dataset.sourceId = sourceId;
+                        }
+                    }
+                    
+                    // 第三列的标签不可拖动
+                    if(cell.id.startsWith('cell3')) {
+                        newTag.draggable = false;
+                        // 添加视觉提示，表明不可拖动
+                        newTag.style.cursor = 'default';
+                        newTag.title = '点击删除按钮移除';
+                    } else {
+                        newTag.draggable = true;
+                    }
+                    
+                    // 添加删除功能
+                    newTag.addEventListener('click', function(e) {
+                        const rect = newTag.getBoundingClientRect();
+                        const isClickOnDeleteButton = 
+                            e.clientX >= rect.right - 20 && 
+                            e.clientX <= rect.right + 10 && 
+                            e.clientY >= rect.top - 10 && 
+                            e.clientY <= rect.top + 20;
+
+                        if (isClickOnDeleteButton) {
+                            e.stopPropagation();
+                            
+                            // 如果在第三列中被删除，恢复源标签的拖动功能
+                            if(cell.id.startsWith('cell3') && newTag.dataset.sourceId) {
+                                const sourceTag = document.getElementById(newTag.dataset.sourceId);
+                                if(sourceTag) {
+                                    sourceTag.draggable = true;
+                                    sourceTag.classList.remove('used');
+                                    sourceTag.style.opacity = '1';
+                                    sourceTag.style.cursor = 'move';
+                                    sourceTag.title = '';
+                                    delete sourceTag.dataset.linkedId;
+                                }
+                            }
+                            
+                        newTag.remove();
+                            // 只有在第三列需要更新总和
+                            if(cell.id.startsWith('cell3')) {
+                        updateSum(cell);
+                            }
+                        }
+                    });
+                    
+                    // 如果是第三列，需要在sum-display前插入
+                    if(cell.id.startsWith('cell3')) {
+                    cell.insertBefore(newTag, cell.querySelector('.sum-display'));
+                    updateSum(cell);
+                    } else {
+                        cell.appendChild(newTag);
+                    }
+                });
+            });
+        }
+        
+        function updateSum(cell) {
+            const tags = cell.querySelectorAll('.number-tag');
+            let sum = 0;
+            
+            tags.forEach(tag => {
+                // 使用parseFloat代替parseInt以支持小数
+                sum += parseFloat(tag.dataset.value);
+            });
+            
+            const sumDisplay = cell.querySelector('.sum-display');
+            // 总和保留一位小数
+            sumDisplay.textContent = `总和: ${sum.toFixed(1)}`;
+        }
+        
+        function addNewRow() {
+            // 获取行数
+            const cellCount = document.querySelectorAll('.cell').length / 3; // 除以3因为每行有3个单元格
+            const rowId = cellCount + 1;
+            
+            // 创建行组容器
+            const rowGroup = document.createElement('div');
+            rowGroup.className = 'row-group';
+            rowGroup.id = `row-group-${rowId}`;
+            rowGroup.dataset.rowId = rowId;
+            
+            // 为日期列添加新日期
+            const newRowNumber = document.createElement('div');
+            newRowNumber.className = 'row-number';
+            newRowNumber.id = `row-number-${rowId}`;
+            newRowNumber.style.height = '72px'; // 确保与单元格高度一致
+            newRowNumber.style.boxSizing = 'border-box';
+            
+            // 设置默认日期为最后一个日期的后一天，如果没有则使用今天
+            let dateStr;
+            const existingDates = document.querySelectorAll('.row-number');
+            if (existingDates.length > 0) {
+                const lastDate = existingDates[existingDates.length - 1].dataset.date;
+                const nextDate = getNextDay(lastDate);
+                dateStr = nextDate;
+            } else {
+                const today = new Date();
+                dateStr = today.toISOString().split('T')[0]; // 格式：YYYY-MM-DD
+            }
+            
+            // 存储完整日期，但显示月-日格式
+            newRowNumber.textContent = formatDateToMonthDay(dateStr);
+            newRowNumber.dataset.date = dateStr;
+            newRowNumber.dataset.rowId = rowId; // 存储行ID用于删除整行
+            
+            // 添加点击事件用于编辑日期
+            newRowNumber.addEventListener('click', function(e) {
+                // 检查是否点击了删除按钮
+                const rect = newRowNumber.getBoundingClientRect();
+                const isClickOnDeleteButton = 
+                    e.clientX >= rect.right - 20 && 
+                    e.clientX <= rect.right + 10 && 
+                    e.clientY >= rect.top - 10 && 
+                    e.clientY <= rect.top + 20;
+                
+                if (isClickOnDeleteButton) {
+                    e.stopPropagation();
+                    deleteEntireRow(rowId);
+                } else {
+                    editRowDate(newRowNumber);
+                }
+            });
+            
+            // 为第一列添加新行
+            const newRow1 = document.createElement('div');
+            newRow1.className = 'cell';
+            newRow1.id = `cell1-${rowId}`;
+            newRow1.dataset.rowId = rowId; // 存储行ID用于删除整行
+            // 添加点击事件用于直接创建标签
+            newRow1.addEventListener('click', function(e) {
+                // 如果点击的是单元格而不是其中的标签
+                if (e.target === newRow1) {
+                    promptAndAddTag(newRow1, 1);
+                }
+            });
+            
+            // 为第二列添加新行
+            const newRow2 = document.createElement('div');
+            newRow2.className = 'cell';
+            newRow2.id = `cell2-${rowId}`;
+            newRow2.dataset.rowId = rowId; // 存储行ID用于删除整行
+            // 添加点击事件用于直接创建标签
+            newRow2.addEventListener('click', function(e) {
+                // 如果点击的是单元格而不是其中的标签
+                if (e.target === newRow2) {
+                    promptAndAddTag(newRow2, 2);
+                }
+            });
+            
+            // 为第三列添加新行
+            const newRow3 = document.createElement('div');
+            newRow3.className = 'cell';
+            newRow3.id = `cell3-${rowId}`;
+            newRow3.dataset.rowId = rowId; // 存储行ID用于删除整行
+            
+            const sumDisplay = document.createElement('div');
+            sumDisplay.className = 'sum-display';
+            sumDisplay.textContent = '总和: 0';
+            
+            newRow3.appendChild(sumDisplay);
+            
+            // 将所有元素添加到行组
+            rowGroup.appendChild(newRowNumber);
+            
+            // 将行组添加到日期列内容区域
+            document.getElementById('row-numbers-content').appendChild(rowGroup);
+            
+            // 将单元格添加到各自的列
+            document.getElementById('column1-content').appendChild(newRow1);
+            document.getElementById('column2-content').appendChild(newRow2);
+            document.getElementById('column3-content').appendChild(newRow3);
+            
+            // 为所有新单元格添加拖放功能
+            [newRow1, newRow2, newRow3].forEach(cell => {
+                cell.addEventListener('dragover', function(e) {
+                    // 获取被拖动的标签来源信息
+                    let sourceColumn = null;
+                    
+                    // 使用全局变量获取当前拖动的标签
+                    if (window.currentDragSourceId) {
+                        const sourceTag = document.getElementById(window.currentDragSourceId);
+                        if (sourceTag) {
+                            // 确定源标签所在的列
+                            const parentCell = sourceTag.closest('.cell');
+                            if (parentCell) {
+                                if (parentCell.id.startsWith('cell1-')) {
+                                    sourceColumn = 1;
+                                } else if (parentCell.id.startsWith('cell2-')) {
+                                    sourceColumn = 2;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 确定目标单元格所在的列
+                    let targetColumn = null;
+                    if (cell.id.startsWith('cell1-')) {
+                        targetColumn = 1;
+                    } else if (cell.id.startsWith('cell2-')) {
+                        targetColumn = 2;
+                    } else if (cell.id.startsWith('cell3-')) {
+                        targetColumn = 3;
+                    }
+                    
+                    // 允许以下情况放置：
+                    // 1. 第一列拖到第三列
+                    // 2. 第二列拖到第三列
+                    // 3. 同一列内的不同行之间移动
+                    const allowDrop = 
+                        (sourceColumn === 1 && targetColumn === 3) || 
+                        (sourceColumn === 2 && targetColumn === 3) ||
+                        (sourceColumn === targetColumn); // 允许同列不同行
+                    
+                    if (allowDrop) {
+                        e.preventDefault(); // 允许放置
+                        // 添加视觉反馈
+                        cell.style.backgroundColor = '#e3f2fd';
+                    }
+                });
+                
+                // 添加dragenter事件处理
+                cell.addEventListener('dragenter', function(e) {
+                    const sourceTag = document.getElementById(window.currentDragSourceId);
+                    if (sourceTag) {
+                        const sourceCell = sourceTag.closest('.cell');
+                        const sourceColumn = sourceCell.id.startsWith('cell1-') ? 1 : 
+                                          sourceCell.id.startsWith('cell2-') ? 2 : 3;
+                        
+                        const targetColumn = cell.id.startsWith('cell1-') ? 1 : 
+                                          cell.id.startsWith('cell2-') ? 2 : 3;
+                                          
+                        if (sourceColumn === targetColumn || 
+                            (sourceColumn !== 3 && targetColumn === 3)) {
+                            cell.style.backgroundColor = '#e3f2fd';
+                        }
+                    }
+                });
+                
+                // 添加dragleave事件处理
+                cell.addEventListener('dragleave', function(e) {
+                    cell.style.backgroundColor = '#f9f9f9';
+                });
+                
+                cell.addEventListener('drop', function(e) {
+                e.preventDefault();
+                    // 恢复单元格背景色
+                    cell.style.backgroundColor = '#f9f9f9';
+                    
+                const value = e.dataTransfer.getData('text/plain');
+                    const sourceId = e.dataTransfer.getData('sourceId');
+                    const sourceTag = document.getElementById(sourceId);
+                    
+                    // 如果是同一列内的移动，直接移动原标签
+                    if (sourceTag && 
+                        ((cell.id.startsWith('cell1-') && sourceTag.closest('.cell').id.startsWith('cell1-')) ||
+                         (cell.id.startsWith('cell2-') && sourceTag.closest('.cell').id.startsWith('cell2-')))) {
+                        cell.appendChild(sourceTag);
+                        return;
+                    }
+                    
+                    // 创建新标签
+                const newTag = document.createElement('div');
+                newTag.className = 'number-tag';
+                newTag.textContent = value;
+                newTag.dataset.value = value;
+                
+                    // 如果是拖到第三列，禁用源标签的拖动
+                    if(cell.id.startsWith('cell3') && sourceId) {
+                        // 找到源标签并禁用拖动
+                        const sourceTag = document.getElementById(sourceId);
+                        if(sourceTag) {
+                            sourceTag.draggable = false;
+                            sourceTag.classList.add('used');
+                            sourceTag.style.opacity = '0.6';
+                            sourceTag.style.cursor = 'default';
+                            sourceTag.title = '已使用，删除第三列中的标签后可再次使用';
+                            
+                            // 存储关联信息
+                            const uniqueId = Date.now() + Math.random().toString(36).substr(2, 5);
+                            sourceTag.dataset.linkedId = uniqueId;
+                            newTag.dataset.linkedId = uniqueId;
+                            newTag.dataset.sourceId = sourceId;
+                        }
+                    }
+                    
+                    // 第三列的标签不可拖动
+                    if(cell.id.startsWith('cell3')) {
+                        newTag.draggable = false;
+                        // 添加视觉提示，表明不可拖动
+                        newTag.style.cursor = 'default';
+                        newTag.title = '点击删除按钮移除';
+                    } else {
+                        newTag.draggable = true;
+                    }
+                    
+                    // 添加删除功能
+                    newTag.addEventListener('click', function(e) {
+                        const rect = newTag.getBoundingClientRect();
+                        const isClickOnDeleteButton = 
+                            e.clientX >= rect.right - 20 && 
+                            e.clientX <= rect.right + 10 && 
+                            e.clientY >= rect.top - 10 && 
+                            e.clientY <= rect.top + 20;
+
+                        if (isClickOnDeleteButton) {
+                            e.stopPropagation();
+                            
+                            // 如果在第三列中被删除，恢复源标签的拖动功能
+                            const parentCell = newTag.closest('.cell');
+                            if (parentCell && parentCell.id.startsWith('cell3') && newTag.dataset.sourceId) {
+                                const sourceTag = document.getElementById(newTag.dataset.sourceId);
+                                if(sourceTag) {
+                                    sourceTag.draggable = true;
+                                    sourceTag.classList.remove('used');
+                                    sourceTag.style.opacity = '1';
+                                    sourceTag.style.cursor = 'move';
+                                    sourceTag.title = '';
+                                    delete sourceTag.dataset.linkedId;
+                                }
+                            }
+                            
+                    newTag.remove();
+                            // 如果在第三列中，更新总和
+                            if (parentCell && parentCell.id.startsWith('cell3')) {
+                                updateSum(parentCell);
+                            }
+                        }
+                    });
+                    
+                    // 如果是第三列的单元格，在sum-display前插入
+                    const sumDisplay = cell.querySelector('.sum-display');
+                    if (sumDisplay) {
+                        cell.insertBefore(newTag, sumDisplay);
+                        updateSum(cell);
+                    } else {
+                        cell.appendChild(newTag);
+                    }
+                });
+            });
+            
+            // 新增行时为品种列添加单元格
+            addVarietyCell(rowId);
+        }
+        
+        // 新增行时为品种列添加单元格
+        function addVarietyCell(rowId) {
+            const varietyColumn = document.getElementById('variety-column').querySelector('.column-content');
+            const newVarietyCell = document.createElement('div');
+            newVarietyCell.className = 'cell editable-cell';
+            newVarietyCell.id = `variety-cell-${rowId}`;
+            newVarietyCell.dataset.rowId = rowId;
+
+            // 默认内容与上一单元格一致
+            const previousCells = varietyColumn.querySelectorAll('.cell');
+            if (previousCells.length > 0) {
+                newVarietyCell.textContent = previousCellContent(varietyColumn);
+            } else {
+                newVarietyCell.textContent = '点击编辑';
+            }
+
+            newVarietyCell.addEventListener('click', function() {
+                editVarietyCell(newVarietyCell);
+            });
+
+            varietyColumn.appendChild(newVarietyCell);
+        }
+
+        // 获取上一个单元格内容
+        function previousCellContent(column) {
+            const cells = column.querySelectorAll('.cell');
+            return cells[cells.length - 1].textContent;
+        }
+
+        // 编辑品种单元格 - 新版
+        function editVarietyCell(cell) {
+            if (cell.classList.contains('editing')) return;
+
+            const originalText = cell.textContent;
+            cell.classList.add('editing');
+
+            // 创建带自动高度的文本域
+            const textarea = document.createElement('textarea');
+            textarea.value = originalText.trim();
+            textarea.style.width = '100%';
+            textarea.style.minHeight = '60px';
+            textarea.style.border = '2px solid #2196F3';
+            textarea.style.borderRadius = '4px';
+            textarea.style.padding = '8px';
+            textarea.style.resize = 'none';
+            textarea.style.boxSizing = 'border-box';
+            
+            // 自动调整高度
+            const adjustHeight = () => {
+                textarea.style.height = 'auto';
+                textarea.style.height = textarea.scrollHeight + 'px';
+            };
+            textarea.addEventListener('input', adjustHeight);
+            
+            // 清空单元格内容并添加文本域
+            cell.textContent = '';
+            cell.appendChild(textarea);
+            textarea.focus();
+            adjustHeight();
+
+            // 保存函数
+            const saveChanges = () => {
+                const newText = textarea.value.trim();
+                cell.textContent = newText || '点击编辑';
+                cell.classList.remove('editing');
+                
+                // 如果内容为空，恢复提示文字
+                if (!newText) {
+                    cell.textContent = '点击编辑';
+                }
+            };
+
+            // 失去焦点时保存
+            textarea.addEventListener('blur', saveChanges);
+
+            // 回车键保存（Ctrl+Enter换行）
+            textarea.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.ctrlKey) {
+                    e.preventDefault();
+                    saveChanges();
+                }
+            });
+
+            // ESC键取消编辑
+            textarea.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    cell.textContent = originalText;
+                    cell.classList.remove('editing');
+                }
+            });
+
+            // 点击其他地方保存
+            document.addEventListener('click', function onClickOutside(e) {
+                if (!cell.contains(e.target)) {
+                    saveChanges();
+                    document.removeEventListener('click', onClickOutside);
+                }
+            }, { once: true });
+        }
+
+        // 获取下一天的日期
+        function getNextDay(dateString) {
+            const date = new Date(dateString);
+            date.setDate(date.getDate() + 1);
+            return date.toISOString().split('T')[0];
+        }
+        
+        // 格式化日期为"MM-DD"格式
+        function formatDateToMonthDay(dateString) {
+            const date = new Date(dateString);
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            return `${month}-${day}`;
+        }
+        
+        // 编辑单个日期
+        function editRowDate(dateElement) {
+            if (dateElement.classList.contains('editing')) {
+                return;
+            }
+            
+            const originalValue = dateElement.dataset.date; // 使用完整日期格式
+            dateElement.classList.add('editing');
+            
+            // 创建日期选择器容器
+            const datePickerContainer = document.createElement('div');
+            datePickerContainer.style.position = 'relative';
+            datePickerContainer.style.width = '100%';
+            datePickerContainer.style.height = '100%';
+            
+            // 创建日期输入框
+            const input = document.createElement('input');
+            input.type = 'date';
+            input.value = originalValue;
+            input.style.width = '100%';
+            input.style.padding = '5px';
+            input.style.border = 'none';
+            input.style.borderRadius = '3px';
+            input.style.boxSizing = 'border-box';
+            
+            // 添加日期选择器图标
+            const calendarIcon = document.createElement('div');
+            calendarIcon.innerHTML = '📅';
+            calendarIcon.style.position = 'absolute';
+            calendarIcon.style.right = '5px';
+            calendarIcon.style.top = '50%';
+            calendarIcon.style.transform = 'translateY(-50%)';
+            calendarIcon.style.cursor = 'pointer';
+            calendarIcon.style.fontSize = '16px';
+            
+            // 点击图标时打开日期选择器
+            calendarIcon.addEventListener('click', function() {
+                input.showPicker();
+            });
+            
+            // 清空日期内容并添加输入框和图标
+            dateElement.textContent = '';
+            datePickerContainer.appendChild(input);
+            datePickerContainer.appendChild(calendarIcon);
+            dateElement.appendChild(datePickerContainer);
+            
+            // 聚焦输入框
+            input.focus();
+            
+            // 处理输入框失去焦点事件
+            input.addEventListener('blur', finishEditing);
+            
+            // 处理输入框变化事件
+            input.addEventListener('change', function() {
+                finishEditing();
+            });
+            
+            // 处理回车键
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    finishEditing();
+                }
+            });
+            
+            // 完成编辑的函数
+            function finishEditing() {
+                const newValue = input.value;
+                dateElement.classList.remove('editing');
+                
+                // 如果输入为空，恢复原始值
+                if (newValue === '') {
+                    dateElement.textContent = formatDateToMonthDay(originalValue);
+                    dateElement.dataset.date = originalValue;
+                } else {
+                    // 如果日期有变化，更新当前日期并调整后续日期
+                    if (newValue !== originalValue) {
+                        dateElement.textContent = formatDateToMonthDay(newValue);
+                        dateElement.dataset.date = newValue;
+                        
+                        // 获取所有日期元素
+                        const rowNumbersColumn = document.getElementById('row-numbers').querySelector('.column-content');
+                        const allDateElements = Array.from(rowNumbersColumn.querySelectorAll('.row-number'));
+                        
+                        // 找到当前日期元素的索引
+                        const currentIndex = allDateElements.indexOf(dateElement);
+                        
+                        // 更新后续日期
+                        if (currentIndex >= 0 && currentIndex < allDateElements.length - 1) {
+                            let nextDate = newValue;
+                            for (let i = currentIndex + 1; i < allDateElements.length; i++) {
+                                nextDate = getNextDay(nextDate);
+                                allDateElements[i].textContent = formatDateToMonthDay(nextDate);
+                                allDateElements[i].dataset.date = nextDate;
+                            }
+                        }
+                    } else {
+                        dateElement.textContent = formatDateToMonthDay(newValue);
+                        dateElement.dataset.date = newValue;
+                    }
+                }
+            }
+        }
+        
+        // 替换原来的行号相关函数
+        function getRowNumber(rowIndex) {
+            // 返回今天的日期作为默认值
+            const today = new Date();
+            return today.toISOString().split('T')[0];
+        }
+        
+        // 更新所有行号函数不再需要，但保留空函数以避免错误
+        function updateRowNumbers() {
+            // 不再需要更新行号
+        }
+        
+        // 添加自定义标签函数
+        function addCustomTag(inputId, columnId) {
+            const input = document.getElementById(inputId);
+            const value = input.value.trim();
+            
+            // 验证输入是否为有效的数字（整数或一位小数）
+            const numberPattern = /^-?\d+(\.\d)?$/;
+            if (value && numberPattern.test(value)) {
+                const column = document.getElementById(columnId + '-content');
+                // 获取该列的最新行
+                const cells = column.querySelectorAll('.cell');
+                const latestCell = cells[cells.length - 1];
+                
+                // 如果没有行，先创建一个新行
+                if (!latestCell) {
+                    addNewRow();
+                    // 重新获取最新行
+                    const newCells = column.querySelectorAll('.cell');
+                    const newLatestCell = newCells[newCells.length - 1];
+                    addTagToCell(newLatestCell, value);
+                } else {
+                    addTagToCell(latestCell, value);
+                }
+                
+                input.value = ''; // 清空输入框
+            } else {
+                alert('请输入有效的数字（整数或保留一位小数）');
+            }
+        }
+
+        // 添加标签到单元格的辅助函数
+        function addTagToCell(cell, value) {
+            const newTag = document.createElement('div');
+            newTag.className = 'number-tag';
+            newTag.textContent = value;
+            newTag.dataset.value = value;
+            
+            // 为标签添加唯一ID，以便后续引用
+            newTag.id = 'tag-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+            
+            // 根据单元格所在列决定是否可拖动
+            if(cell.id && cell.id.startsWith('cell3')) {
+                newTag.draggable = false;
+                // 添加视觉提示，表明不可拖动
+                newTag.style.cursor = 'default';
+                newTag.title = '点击删除按钮移除';
+            } else {
+                newTag.draggable = true;
+            }
+            
+            // 添加拖拽事件（只有非第三列的标签可拖动）
+            if(newTag.draggable) {
+                newTag.addEventListener('dragstart', function(e) {
+                    if (!newTag.classList.contains('editing') && !newTag.classList.contains('used')) {
+                        e.dataTransfer.setData('text/plain', newTag.dataset.value);
+                        e.dataTransfer.setData('sourceId', newTag.id);
+                        // 存储当前拖动的标签ID到全局变量
+                        window.currentDragSourceId = newTag.id;
+                    } else {
+                        e.preventDefault();
+                    }
+                });
+                
+                newTag.addEventListener('dragend', function() {
+                    // 清除全局变量
+                    window.currentDragSourceId = null;
+                });
+            }
+
+            // 添加双击编辑功能
+            newTag.addEventListener('dblclick', function(e) {
+                e.stopPropagation();
+                if (!newTag.classList.contains('editing')) {
+                    newTag.classList.add('editing');
+                    const wasDraggable = newTag.draggable;
+                    newTag.draggable = false;
+                    const currentValue = newTag.textContent;
+                    newTag.textContent = '';
+                    
+                    const editor = document.createElement('input');
+                    editor.type = 'text'; // 改为text类型以支持小数
+                    editor.value = currentValue;
+                    editor.style.width = '60px';
+                    editor.style.padding = '5px';
+                    editor.style.border = 'none';
+                    editor.style.borderRadius = '3px';
+                    editor.style.backgroundColor = 'white';
+                    editor.style.color = '#333';
+                    
+                    editor.addEventListener('blur', finishEditing);
+                    editor.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            finishEditing();
+                        }
+                    });
+                    
+                    function finishEditing() {
+                        const newValue = editor.value.trim();
+                        // 验证输入是否为有效的数字（整数或一位小数）
+                        const numberPattern = /^-?\d+(\.\d)?$/;
+                        if (newValue && numberPattern.test(newValue)) {
+                            newTag.textContent = newValue;
+                            newTag.dataset.value = newValue;
+                            // 如果在第三列中，更新总和
+                            const parentCell = newTag.closest('.cell');
+                            if (parentCell && parentCell.id.startsWith('cell3')) {
+                                updateSum(parentCell);
+                            }
+                        } else {
+                            newTag.textContent = currentValue;
+                            if (newValue !== '') {
+                                alert('请输入有效的数字（整数或保留一位小数）');
+                            }
+                        }
+                        newTag.classList.remove('editing');
+                        newTag.draggable = wasDraggable; // 恢复原来的拖拽状态
+                    }
+                    
+                    newTag.appendChild(editor);
+                    editor.focus();
+                }
+            });
+
+            // 添加删除功能
+            newTag.addEventListener('click', function(e) {
+                const rect = newTag.getBoundingClientRect();
+                const isClickOnDeleteButton = 
+                    e.clientX >= rect.right - 20 && 
+                    e.clientX <= rect.right + 10 && 
+                    e.clientY >= rect.top - 10 && 
+                    e.clientY <= rect.top + 20;
+
+                if (isClickOnDeleteButton) {
+                    e.stopPropagation();
+                    
+                    // 如果在第三列中被删除，恢复源标签的拖动功能
+                    const parentCell = newTag.closest('.cell');
+                    if (parentCell && parentCell.id.startsWith('cell3') && newTag.dataset.sourceId) {
+                        const sourceTag = document.getElementById(newTag.dataset.sourceId);
+                        if(sourceTag) {
+                            sourceTag.draggable = true;
+                            sourceTag.classList.remove('used');
+                            sourceTag.style.opacity = '1';
+                            sourceTag.style.cursor = 'move';
+                            sourceTag.title = '';
+                            delete sourceTag.dataset.linkedId;
+                        }
+                    }
+                    
+                    newTag.remove();
+                    // 如果在第三列中，更新总和
+                    if (parentCell && parentCell.id.startsWith('cell3')) {
+                        updateSum(parentCell);
+                    }
+                }
+            });
+            
+            // 如果是第三列的单元格，在sum-display前插入
+            const sumDisplay = cell.querySelector('.sum-display');
+            if (sumDisplay) {
+                cell.insertBefore(newTag, sumDisplay);
+                updateSum(cell);
+            } else {
+                cell.appendChild(newTag);
+            }
+        }
+        
+        // 初始化标题编辑功能
+        function initTitleEditing() {
+            const editableTitles = document.querySelectorAll('.editable-title');
+            
+            editableTitles.forEach(title => {
+                title.addEventListener('click', function() {
+                    // 如果已经在编辑中，不做任何操作
+                    if (title.classList.contains('editing')) {
+                        return;
+                    }
+                    
+                    // 保存原始文本
+                    const originalText = title.textContent;
+                    title.classList.add('editing');
+                    
+                    // 创建输入框
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.value = originalText;
+                    input.style.width = '100%';
+                    input.style.fontSize = '1.5em';
+                    input.style.fontWeight = 'bold';
+                    input.style.padding = '5px';
+                    input.style.border = 'none';
+                    input.style.outline = 'none';
+                    input.style.backgroundColor = 'transparent';
+                    
+                    // 清空标题内容并添加输入框
+                    title.textContent = '';
+                    title.appendChild(input);
+                    input.focus();
+                    
+                    // 处理输入框失去焦点事件
+                    input.addEventListener('blur', finishEditing);
+                    
+                    // 处理回车键
+                    input.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            finishEditing();
+                        }
+                    });
+                    
+                    // 完成编辑的函数
+                    function finishEditing() {
+                        const newText = input.value.trim();
+                        title.classList.remove('editing');
+                        
+                        // 如果输入为空，恢复原始文本
+                        if (newText === '') {
+                            title.textContent = originalText;
+                        } else {
+                            title.textContent = newText;
+                        }
+                    }
+                });
+            });
+        }
+
+        // 添加删除整行的函数
+        function deleteEntireRow(rowId) {
+            // 确认是否删除
+            if (confirm('确定要删除这一行吗？这将删除该行的所有内容。')) {
+                // 删除行组
+                const rowGroup = document.getElementById(`row-group-${rowId}`);
+                if (rowGroup) {
+                    rowGroup.remove();
+                }
+                
+                // 删除第一列单元格
+                const cell1 = document.getElementById(`cell1-${rowId}`);
+                if (cell1) {
+                    // 找到所有标签，恢复被使用的标签
+                    const tags = cell1.querySelectorAll('.number-tag');
+                    tags.forEach(tag => {
+                        if (tag.dataset.linkedId) {
+                            // 找到第三列中对应的标签并删除
+                            const linkedTags = document.querySelectorAll(`.number-tag[data-linked-id="${tag.dataset.linkedId}"]`);
+                            linkedTags.forEach(linkedTag => {
+                                if (linkedTag !== tag) {
+                                    const parentCell = linkedTag.closest('.cell');
+                                    linkedTag.remove();
+                                    if (parentCell && parentCell.id.startsWith('cell3')) {
+                                        updateSum(parentCell);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    cell1.remove();
+                }
+                
+                // 删除第二列单元格
+                const cell2 = document.getElementById(`cell2-${rowId}`);
+                if (cell2) {
+                    // 找到所有标签，恢复被使用的标签
+                    const tags = cell2.querySelectorAll('.number-tag');
+                    tags.forEach(tag => {
+                        if (tag.dataset.linkedId) {
+                            // 找到第三列中对应的标签并删除
+                            const linkedTags = document.querySelectorAll(`.number-tag[data-linked-id="${tag.dataset.linkedId}"]`);
+                            linkedTags.forEach(linkedTag => {
+                                if (linkedTag !== tag) {
+                                    const parentCell = linkedTag.closest('.cell');
+                                    linkedTag.remove();
+                                    if (parentCell && parentCell.id.startsWith('cell3')) {
+                                        updateSum(parentCell);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    cell2.remove();
+                }
+                
+                // 删除第三列单元格
+                const cell3 = document.getElementById(`cell3-${rowId}`);
+                if (cell3) {
+                    cell3.remove();
+                }
+                
+                // 重新排列剩余行的ID
+                reorderRows();
+            }
+        }
+        
+        // 重新排列行ID的函数
+        function reorderRows() {
+            // 获取所有行组
+            const rowGroups = document.querySelectorAll('.row-group');
+            
+            // 获取所有单元格
+            const cells1 = document.querySelectorAll('#column1-content .cell');
+            const cells2 = document.querySelectorAll('#column2-content .cell');
+            const cells3 = document.querySelectorAll('#column3-content .cell');
+            
+            // 重新分配ID
+            for (let i = 0; i < rowGroups.length; i++) {
+                const newRowId = i + 1;
+                
+                // 更新行组
+                const rowGroup = rowGroups[i];
+                rowGroup.id = `row-group-${newRowId}`;
+                rowGroup.dataset.rowId = newRowId;
+                
+                // 更新日期元素
+                const dateElement = rowGroup.querySelector('.row-number');
+                if (dateElement) {
+                    dateElement.id = `row-number-${newRowId}`;
+                    dateElement.dataset.rowId = newRowId;
+                }
+                
+                // 更新第一列单元格
+                if (i < cells1.length) {
+                    const cell = cells1[i];
+                    cell.id = `cell1-${newRowId}`;
+                    cell.dataset.rowId = newRowId;
+                }
+                
+                // 更新第二列单元格
+                if (i < cells2.length) {
+                    const cell = cells2[i];
+                    cell.id = `cell2-${newRowId}`;
+                    cell.dataset.rowId = newRowId;
+                }
+                
+                // 更新第三列单元格
+                if (i < cells3.length) {
+                    const cell = cells3[i];
+                    cell.id = `cell3-${newRowId}`;
+                    cell.dataset.rowId = newRowId;
+                }
+            }
+        }
+
+        // 添加通过鼠标点击创建标签的函数
+        function promptAndAddTag(cell, columnNumber) {
+            // 移除任何已存在的自定义输入框
+            const existingPopup = document.querySelector('.custom-input-popup');
+            if (existingPopup) {
+                existingPopup.remove();
+            }
+            
+            // 创建自定义输入框
+            const popup = document.createElement('div');
+            popup.className = 'custom-input-popup';
+            
+            // 获取单元格的位置信息
+            const cellRect = cell.getBoundingClientRect();
+            
+            // 检查单元格内是否已有标签
+            const existingTags = cell.querySelectorAll('.number-tag');
+            
+            // 计算输入框的位置，避免遮挡已有标签
+            let popupLeft = cellRect.left + 20;
+            let popupTop = cellRect.top + window.scrollY + 20;
+            
+            // 如果有已存在的标签，调整位置
+            if (existingTags.length > 0) {
+                // 获取最后一个标签的位置
+                const lastTag = existingTags[existingTags.length - 1];
+                const lastTagRect = lastTag.getBoundingClientRect();
+                
+                // 计算新位置
+                if (lastTagRect.right + 150 < cellRect.right) {
+                    // 如果右侧有足够空间，放在最后一个标签的右侧
+                    popupLeft = lastTagRect.right + 10;
+                    popupTop = lastTagRect.top + window.scrollY;
+                } else if (lastTagRect.bottom + 100 < cellRect.bottom) {
+                    // 如果下方有足够空间，放在最后一个标签的下方
+                    popupLeft = lastTagRect.left;
+                    popupTop = lastTagRect.bottom + window.scrollY + 10;
+                } else {
+                    // 如果单元格内空间不足，放在单元格外部的右侧
+                    popupLeft = cellRect.right + 10;
+                    popupTop = cellRect.top + window.scrollY;
+                }
+            }
+            
+            // 确保输入框不会超出视口
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            
+            // 估计输入框的宽度和高度
+            const popupWidth = 200;
+            const popupHeight = 120;
+            
+            // 调整水平位置，确保不超出右边界
+            if (popupLeft + popupWidth > viewportWidth - 20) {
+                popupLeft = viewportWidth - popupWidth - 20;
+            }
+            
+            // 调整垂直位置，确保不超出下边界
+            if (popupTop + popupHeight > viewportHeight + window.scrollY - 20) {
+                popupTop = viewportHeight + window.scrollY - popupHeight - 20;
+            }
+            
+            // 设置输入框位置
+            popup.style.left = `${popupLeft}px`;
+            popup.style.top = `${popupTop}px`;
+            
+            // 创建标题
+            const title = document.createElement('div');
+            title.textContent = '请输入数字（整数或保留一位小数）：';
+            title.style.marginBottom = '10px';
+            title.style.fontWeight = 'bold';
+            
+            // 创建输入框
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = '例如: 10 或 5.5';
+            
+            // 创建按钮容器
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.className = 'buttons';
+            
+            // 创建确认按钮
+            const confirmBtn = document.createElement('button');
+            confirmBtn.className = 'confirm-btn';
+            confirmBtn.textContent = '确认';
+            
+            // 创建取消按钮
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'cancel-btn';
+            cancelBtn.textContent = '取消';
+            
+            // 添加按钮到容器
+            buttonsDiv.appendChild(confirmBtn);
+            buttonsDiv.appendChild(cancelBtn);
+            
+            // 组装输入框
+            popup.appendChild(title);
+            popup.appendChild(input);
+            popup.appendChild(buttonsDiv);
+            
+            // 添加到文档
+            document.body.appendChild(popup);
+            
+            // 聚焦输入框
+            input.focus();
+            
+            // 确认按钮点击事件
+            confirmBtn.addEventListener('click', function() {
+                const value = input.value.trim();
+                validateAndAddTag(value);
+            });
+            
+            // 取消按钮点击事件
+            cancelBtn.addEventListener('click', function() {
+                popup.remove();
+            });
+            
+            // 输入框回车键事件
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const value = input.value.trim();
+                    validateAndAddTag(value);
+                }
+            });
+            
+            // 点击其他区域关闭输入框
+            document.addEventListener('click', function closePopup(e) {
+                if (!popup.contains(e.target) && e.target !== cell) {
+                    popup.remove();
+                    document.removeEventListener('click', closePopup);
+                }
+            });
+            
+            // 验证输入并添加标签
+            function validateAndAddTag(value) {
+                // 验证输入是否为有效的数字（整数或一位小数）
+                const numberPattern = /^-?\d+(\.\d)?$/;
+                if (value && numberPattern.test(value)) {
+                    addTagToCell(cell, value);
+                    popup.remove();
+                } else if (value !== '') {
+                    alert('请输入有效的数字（整数或保留一位小数）');
+                    input.focus();
+                }
+            }
+        }
+        
+        // 添加滚动同步功能
+        function initScrollSync() {
+            const columnContents = [
+                document.querySelector('#row-numbers-content'),
+                document.querySelector('#variety-content'),
+                document.querySelector('#column1-content'),
+                document.querySelector('#column2-content'),
+                document.querySelector('#column3-content')
+            ];
+            
+            // 为每个列内容区域添加滚动事件监听器
+            columnContents.forEach((content, index) => {
+                if (content) {
+                    content.addEventListener('scroll', function() {
+                        // 获取当前滚动位置
+                        const scrollTop = this.scrollTop;
+                        
+                        // 同步其他列的滚动位置
+                        columnContents.forEach((otherContent, otherIndex) => {
+                            if (otherContent && otherIndex !== index) {
+                                // 防止无限循环触发滚动事件
+                                if (otherContent.scrollTop !== scrollTop) {
+                                    otherContent.scrollTop = scrollTop;
+                                }
+                            }
+                        });
+                    });
+                }
+            });
+            
+            // 添加行高亮效果
+            document.addEventListener('mouseover', function(e) {
+                const cell = e.target.closest('.cell');
+                if (cell) {
+                    const rowId = cell.dataset.rowId;
+                    if (rowId) {
+                        highlightRow(rowId);
+                    }
+                }
+                
+                const rowNumber = e.target.closest('.row-number');
+                if (rowNumber) {
+                    const rowId = rowNumber.dataset.rowId;
+                    if (rowId) {
+                        highlightRow(rowId);
+                    }
+                }
+            });
+            
+            document.addEventListener('mouseout', function(e) {
+                if (!e.relatedTarget || !e.relatedTarget.closest('.row-group, .cell')) {
+                    // 鼠标移出行区域，取消高亮
+                    clearRowHighlight();
+                }
+            });
+        }
+        
+        // 高亮指定行
+        function highlightRow(rowId) {
+            // 清除之前的高亮
+            clearRowHighlight();
+            
+            // 高亮行组
+            const rowGroup = document.getElementById(`row-group-${rowId}`);
+            if (rowGroup) {
+                rowGroup.classList.add('highlight');
+            }
+            
+            // 高亮单元格
+            const cells = document.querySelectorAll(`.cell[data-row-id="${rowId}"]`);
+            cells.forEach(cell => {
+                cell.classList.add('highlight');
+                cell.style.backgroundColor = '#e3f2fd';
+                cell.style.borderColor = '#2196F3';
+            });
+            
+            // 高亮日期
+            const rowNumber = document.getElementById(`row-number-${rowId}`);
+            if (rowNumber) {
+                rowNumber.classList.add('highlight');
+                rowNumber.style.backgroundColor = '#e3f2fd';
+                rowNumber.style.borderColor = '#2196F3';
+            }
+        }
+        
+        // 清除行高亮
+        function clearRowHighlight() {
+            // 恢复行组样式
+            document.querySelectorAll('.row-group.highlight').forEach(group => {
+                group.classList.remove('highlight');
+            });
+            
+            // 恢复单元格样式
+            document.querySelectorAll('.cell.highlight').forEach(cell => {
+                cell.classList.remove('highlight');
+                
+                // 恢复原始背景色（根据奇偶行）
+                const rowId = cell.dataset.rowId;
+                if (rowId) {
+                    const isOdd = parseInt(rowId) % 2 === 1;
+                    cell.style.backgroundColor = isOdd ? '#f9f9f9' : '#f0f0f0';
+                    cell.style.borderColor = '#ccc';
+                }
+            });
+            
+            // 恢复日期样式
+            document.querySelectorAll('.row-number.highlight').forEach(rowNumber => {
+                rowNumber.classList.remove('highlight');
+                
+                // 恢复原始背景色（根据奇偶行）
+                const rowId = rowNumber.dataset.rowId;
+                if (rowId) {
+                    const isOdd = parseInt(rowId) % 2 === 1;
+                    rowNumber.style.backgroundColor = isOdd ? '#f9f9f9' : '#f0f0f0';
+                    rowNumber.style.borderColor = '#ccc';
+                }
+            });
+        }
+
+        // 添加格式化时间的函数
+        function formatDateTime() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            return `${year}${month}${day}_${hours}${minutes}${seconds}`;
+        }
+
+        // 导出到Excel功能
+        function exportToExcel() {
+            // 创建一个工作表数据数组
+            let data = [];
+            
+            // 获取主标题作为文件名
+            const mainTitle = document.getElementById('main-title').textContent;
+            const timestamp = formatDateTime();
+            
+            // 添加表头
+            const title1 = document.getElementById('title1').textContent;
+            const title2 = document.getElementById('title2').textContent;
+            data.push(['日期', '品种', title1, title2, '合计']); // 添加品种列标题
+            
+            // 获取所有行
+            const rowGroups = document.querySelectorAll('.row-group');
+            
+            // 遍历每一行
+            rowGroups.forEach(rowGroup => {
+                const rowId = rowGroup.dataset.rowId;
+                
+                // 获取日期
+                const dateElement = rowGroup.querySelector('.row-number');
+                const date = dateElement ? dateElement.dataset.date : '';
+                
+                // 获取品种数据
+                const varietyCell = document.getElementById(`variety-cell-${rowId}`);
+                const variety = varietyCell ? varietyCell.textContent : '';
+                
+                // 获取第一列数据
+                const cell1 = document.getElementById(`cell1-${rowId}`);
+                const tags1 = cell1 ? Array.from(cell1.querySelectorAll('.number-tag')).map(tag => tag.dataset.value) : [];
+                const values1 = tags1.join(', ');
+                
+                // 获取第二列数据
+                const cell2 = document.getElementById(`cell2-${rowId}`);
+                const tags2 = cell2 ? Array.from(cell2.querySelectorAll('.number-tag')).map(tag => tag.dataset.value) : [];
+                const values2 = tags2.join(', ');
+                
+                // 获取第三列数据（合计）
+                const cell3 = document.getElementById(`cell3-${rowId}`);
+                const sumDisplay = cell3 ? cell3.querySelector('.sum-display').textContent : '';
+                const sum = sumDisplay.replace('总和: ', '');
+                
+                // 添加行数据
+                data.push([date, variety, values1, values2, sum]); // 添加品种列数据
+            });
+            
+            // 创建CSV内容
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF"; // 添加BOM以支持中文
+            
+            data.forEach(row => {
+                const csvRow = row.map(cell => {
+                    // 如果单元格包含逗号、引号或换行符，则用引号包裹
+                    if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+                        return `"${cell.replace(/"/g, '""')}"`;
+                    }
+                    return cell;
+                }).join(',');
+                csvContent += csvRow + '\r\n';
+            });
+            
+            // 创建下载链接
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', `${mainTitle}_${timestamp}.csv`);
+            document.body.appendChild(link);
+            
+            // 触发下载
+            link.click();
+            
+            // 清理
+            document.body.removeChild(link);
+        }
+
+        // 导出为图片功能
+        function exportToImage() {
+            // 显示加载中动画
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.className = 'loading-overlay';
+            
+            const loadingSpinner = document.createElement('div');
+            loadingSpinner.className = 'loading-spinner';
+            
+            const loadingContainer = document.createElement('div');
+            loadingContainer.style.display = 'flex';
+            loadingContainer.style.flexDirection = 'column';
+            loadingContainer.style.alignItems = 'center';
+            
+            const loadingText = document.createElement('div');
+            loadingText.className = 'loading-text';
+            loadingText.textContent = '正在生成图片，请稍候...';
+            
+            loadingContainer.appendChild(loadingSpinner);
+            loadingContainer.appendChild(loadingText);
+            loadingOverlay.appendChild(loadingContainer);
+            document.body.appendChild(loadingOverlay);
+            
+            // 获取要截图的元素
+            const container = document.querySelector('.container');
+            const title = document.getElementById('main-title');
+            
+            // 创建一个临时容器，包含标题和表格
+            const tempContainer = document.createElement('div');
+            tempContainer.style.backgroundColor = 'white';
+            tempContainer.style.padding = '20px';
+            tempContainer.style.width = container.offsetWidth + 'px';
+            
+            // 克隆标题
+            const titleClone = document.createElement('h1');
+            titleClone.textContent = title.textContent;
+            titleClone.style.textAlign = 'center';
+            titleClone.style.marginBottom = '20px';
+            
+            // 将克隆的标题添加到临时容器
+            tempContainer.appendChild(titleClone);
+            
+            // 克隆表格容器
+            const containerClone = container.cloneNode(true);
+            
+            // 确保所有内容都可见（不受滚动限制）
+            const columnContents = containerClone.querySelectorAll('.column-content');
+            columnContents.forEach(content => {
+                content.style.maxHeight = 'none';
+                content.style.overflow = 'visible';
+            });
+            
+            // 将克隆的表格添加到临时容器
+            tempContainer.appendChild(containerClone);
+            
+            // 将临时容器添加到文档中（但不可见）
+            tempContainer.style.position = 'absolute';
+            tempContainer.style.left = '-9999px';
+            document.body.appendChild(tempContainer);
+            
+            // 使用html2canvas截图
+            setTimeout(() => {
+                html2canvas(tempContainer, {
+                    scale: 2, // 提高图片质量
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#ffffff'
+                }).then(canvas => {
+                    // 移除临时容器
+                    document.body.removeChild(tempContainer);
+                    
+                    // 移除加载中动画
+                    document.body.removeChild(loadingOverlay);
+                    
+                    // 将canvas转换为图片
+                    const image = canvas.toDataURL('image/png');
+                    
+                    // 创建下载链接
+                    const link = document.createElement('a');
+                    link.href = image;
+                    const timestamp = formatDateTime();
+                    link.download = `${title.textContent}_${timestamp}.png`;
+                    link.click();
+                }).catch(error => {
+                    console.error('截图失败:', error);
+                    alert('截图失败，请重试');
+                    
+                    // 移除临时容器
+                    document.body.removeChild(tempContainer);
+                    
+                    // 移除加载中动画
+                    document.body.removeChild(loadingOverlay);
+                });
+            }, 500); // 给浏览器一些时间来渲染临时容器
+        }
+    </script>
+</body>
+</html>
